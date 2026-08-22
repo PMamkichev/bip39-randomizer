@@ -1,1 +1,16 @@
-şë+ı¸§ı¶¬{®%Šwµß¯İzÿìµÚ.´ê^­«b¢yè¶—«š+myßî²¿ÛŠÛjÇºàÎzºè®‰â›­
+{
+  "name": "bip39-bitcoin-generator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild js/bitcoin-source.js --bundle --format=esm --platform=browser --target=es2020 --outfile=js/bitcoin.js",
+    "test": "npm run build && node tests/bitcoin.test.mjs"
+  },
+  "dependencies": {
+    "@scure/bip32": "2.3.0",
+    "@scure/btc-signer": "2.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
