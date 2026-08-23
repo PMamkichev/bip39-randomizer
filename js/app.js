@@ -1,6 +1,6 @@
-import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.2";
-import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.2";
-import { generateValidMnemonic } from "./generator.js?v=1.4.2";
+import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.3";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.3";
+import { generateValidMnemonic } from "./generator.js?v=1.4.3";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -12,8 +12,8 @@ let availableUpdateVersion = null;
 let updateCheckTimer = null;
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
 const localMockBuild = window.location.hostname === "127.0.0.1"
-  && new URLSearchParams(window.location.search).get("build") === "1.4.3";
-const APP_VERSION = localMockBuild ? "1.4.3" : "1.4.2";
+  && new URLSearchParams(window.location.search).get("build") === "1.4.4";
+const APP_VERSION = localMockBuild ? "1.4.4" : "1.4.3";
 
 const translations = {
   ru: {
@@ -508,7 +508,7 @@ async function checkUpdates({ silentCurrent = false } = {}) {
   try {
     const params = new URLSearchParams(window.location.search);
     const mockVersion = window.location.hostname === "127.0.0.1" && params.get("mock-update") === "1"
-      ? "1.4.3"
+      ? "1.4.4"
       : null;
     let version = mockVersion;
     if (!version) {
