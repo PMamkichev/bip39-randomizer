@@ -1,6 +1,6 @@
-import { BalanceRateLimitError, fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.5.0";
-import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.5.0";
-import { generateValidMnemonic } from "./generator.js?v=1.5.0";
+import { BalanceRateLimitError, fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.5.1";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.5.1";
+import { generateValidMnemonic } from "./generator.js?v=1.5.1";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -21,8 +21,8 @@ const COOLDOWN_MS = Number.isInteger(localCooldownSeconds) && localCooldownSecon
   ? localCooldownSeconds * 1_000
   : 60_000;
 const localMockBuild = window.location.hostname === "127.0.0.1"
-  && new URLSearchParams(window.location.search).get("build") === "1.5.1";
-const APP_VERSION = localMockBuild ? "1.5.1" : "1.5.0";
+  && new URLSearchParams(window.location.search).get("build") === "1.5.2";
+const APP_VERSION = localMockBuild ? "1.5.2" : "1.5.1";
 
 const translations = {
   ru: {
@@ -161,9 +161,11 @@ const translations = {
 
 const elements = {
   words: document.querySelector("#words"),
+  seedHeading: document.querySelector(".seed-heading"),
   seedToggle: document.querySelector("#seed-toggle"),
   seedStatus: document.querySelector("#seed-status"),
   addresses: document.querySelector("#addresses"),
+  addressesHeading: document.querySelector(".addresses-heading"),
   more: document.querySelector("#more-button"),
   copy: document.querySelector("#copy-button"),
   checkUpdate: document.querySelector("#check-update-button"),
@@ -334,6 +336,7 @@ function configureTelegram() {
 }
 
 function renderWords() {
+  const hasWords = currentWords.length > 0;
   elements.words.replaceChildren(
     ...currentWords.map((word, index) => {
       const item = document.createElement("li");
@@ -349,16 +352,22 @@ function renderWords() {
       return item;
     })
   );
-  elements.words.hidden = !seedExpanded;
+  elements.seedHeading.hidden = !hasWords;
+  elements.words.hidden = !hasWords || !seedExpanded;
+  elements.seedToggle.disabled = !hasWords;
+  elements.copy.disabled = !hasWords;
   elements.seedToggle.textContent = seedExpanded ? t("hideSeed") : t("showSeed");
   elements.seedStatus.textContent = seedExpanded ? t("seedVisible") : t("seedHidden");
 }
 
 function renderTotalBalance() {
+  const hasAddresses = currentAddresses.length > 0;
   const states = currentAddresses.map(({ id }) => balances.get(id));
   const allReady = states.length > 0 && states.every((state) => state?.status === "ready");
   const hasError = states.some((state) => state?.status === "error");
 
+  elements.totalBalanceLabel.hidden = !hasAddresses;
+  elements.totalBalance.hidden = !hasAddresses;
   elements.totalBalance.textContent = allReady
     ? `${formatBtc(states.reduce((sum, state) => sum + state.satoshis, 0))} BTC`
     : hasError
@@ -367,6 +376,7 @@ function renderTotalBalance() {
 }
 
 function renderAddresses() {
+  elements.addressesHeading.hidden = currentAddresses.length === 0;
   elements.addresses.replaceChildren(
     ...currentAddresses.map(({ id, label, address }) => {
       const card = document.createElement("li");
@@ -566,7 +576,7 @@ async function checkUpdates({ silentCurrent = false } = {}) {
   try {
     const params = new URLSearchParams(window.location.search);
     const mockVersion = window.location.hostname === "127.0.0.1" && params.get("mock-update") === "1"
-      ? "1.5.1"
+      ? "1.5.2"
       : null;
     let version = mockVersion;
     if (!version) {
@@ -637,7 +647,6 @@ elements.languageButtons.forEach((button) => {
 
 configureTelegram();
 applyLanguage(language);
-generate();
 scheduleUpdateCheck();
 window.addEventListener("pageshow", scheduleUpdateCheck);
 document.addEventListener("visibilitychange", () => {
