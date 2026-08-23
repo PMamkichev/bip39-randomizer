@@ -2,6 +2,13 @@ const API_BASE = "https://blockstream.info/api";
 const EXPLORER_BASE = "https://blockstream.info/address/";
 const REQUEST_TIMEOUT_MS = 10_000;
 
+export class BalanceRateLimitError extends Error {
+  constructor() {
+    super("Balance request rate limited.");
+    this.name = "BalanceRateLimitError";
+  }
+}
+
 function validStats(stats) {
   return stats &&
     Number.isSafeInteger(stats.funded_txo_sum) &&
@@ -21,6 +28,7 @@ export async function fetchAddressBalance(address) {
     const response = await fetch(`${API_BASE}/address/${encodeURIComponent(address)}`, {
       signal: controller.signal,
     });
+    if (response.status === 429) throw new BalanceRateLimitError();
     if (!response.ok) throw new Error("Balance request failed.");
 
     const payload = await response.json();

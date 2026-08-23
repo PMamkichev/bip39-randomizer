@@ -1,6 +1,6 @@
-import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.4";
-import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.4";
-import { generateValidMnemonic } from "./generator.js?v=1.4.4";
+import { BalanceRateLimitError, fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.5";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.5";
+import { generateValidMnemonic } from "./generator.js?v=1.4.5";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -12,8 +12,8 @@ let availableUpdateVersion = null;
 let updateCheckTimer = null;
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
 const localMockBuild = window.location.hostname === "127.0.0.1"
-  && new URLSearchParams(window.location.search).get("build") === "1.4.5";
-const APP_VERSION = localMockBuild ? "1.4.5" : "1.4.4";
+  && new URLSearchParams(window.location.search).get("build") === "1.4.6";
+const APP_VERSION = localMockBuild ? "1.4.6" : "1.4.5";
 
 const translations = {
   ru: {
@@ -56,7 +56,6 @@ const translations = {
     aboutClose: "Понятно",
     copyAddress: "📋 Копировать",
     open: "Открыть",
-    refresh: "🔄 Обновить баланс",
     refreshing: "Обновление…",
     more: "🎲 Новый ход",
     creating: "Создаём…",
@@ -66,7 +65,9 @@ const translations = {
     totalUnavailable: "Недоступен",
     balance: "Баланс",
     unavailable: "недоступен",
-    partialBalanceError: "Не удалось обновить часть балансов. Попробуйте ещё раз.",
+    partialBalanceError: "Не удалось обновить часть балансов.",
+    balanceRateLimited: "Лимит проверки баланса временно превышен.",
+    balanceRateLimitedShort: "лимит превышен",
     generationError: "Не удалось создать BIP-39. Попробуйте ещё раз.",
     copyWordsError: "Не удалось скопировать слова — выделите их вручную.",
     copyAddressError: "Не удалось скопировать адрес. Попробуйте ещё раз.",
@@ -120,7 +121,6 @@ const translations = {
     aboutClose: "Got it",
     copyAddress: "📋 Copy",
     open: "Open",
-    refresh: "🔄 Refresh balance",
     refreshing: "Refreshing…",
     more: "🎲 New turn",
     creating: "Creating…",
@@ -130,7 +130,9 @@ const translations = {
     totalUnavailable: "Unavailable",
     balance: "Balance",
     unavailable: "unavailable",
-    partialBalanceError: "Some balances could not be refreshed. Try again.",
+    partialBalanceError: "Some balances could not be refreshed.",
+    balanceRateLimited: "The balance-check limit has been temporarily exceeded.",
+    balanceRateLimitedShort: "rate limited",
     generationError: "Could not create BIP-39. Try again.",
     copyWordsError: "Could not copy the words — select them manually.",
     copyAddressError: "Could not copy the address. Try again.",
@@ -152,7 +154,6 @@ const elements = {
   seedStatus: document.querySelector("#seed-status"),
   addresses: document.querySelector("#addresses"),
   more: document.querySelector("#more-button"),
-  refresh: document.querySelector("#refresh-button"),
   copy: document.querySelector("#copy-button"),
   checkUpdate: document.querySelector("#check-update-button"),
   version: document.querySelector("#app-version"),
@@ -262,7 +263,6 @@ function applyLanguage(nextLanguage, shouldSave = false) {
   });
 
   if (!elements.more.disabled) setNewTurnLabel("newTurn");
-  if (!elements.refresh.disabled) elements.refresh.textContent = t("refresh");
   render();
 }
 
@@ -337,7 +337,7 @@ function renderAddresses() {
       balance.textContent = state.status === "ready"
         ? `${t("balance")}: ${formatBtc(state.satoshis)} BTC`
         : state.status === "error"
-          ? `${t("balance")}: ${t("unavailable")}`
+          ? `${t("balance")}: ${state.reason === "rate-limit" ? t("balanceRateLimitedShort") : t("unavailable")}`
           : `${t("balance")}: ${t("refreshing")}`;
       actions.className = "address-actions";
       copy.className = "address-button copy-address-button";
@@ -368,15 +368,12 @@ function render() {
 
 function setButtonsDisabled(disabled) {
   elements.more.disabled = disabled;
-  elements.refresh.disabled = disabled || currentAddresses.length === 0;
 }
 
 async function refreshBalances(version = generationId) {
   if (!currentAddresses.length) return;
 
   elements.balanceMessage.textContent = t("refreshing");
-  elements.refresh.textContent = t("refreshing");
-  elements.refresh.disabled = true;
   currentAddresses.forEach(({ id }) => balances.set(id, { status: "loading" }));
   render();
 
@@ -384,8 +381,11 @@ async function refreshBalances(version = generationId) {
     currentAddresses.map(async ({ id, address }) => {
       try {
         return [id, { status: "ready", satoshis: await fetchAddressBalance(address) }];
-      } catch {
-        return [id, { status: "error" }];
+      } catch (error) {
+        return [id, {
+          status: "error",
+          reason: error instanceof BalanceRateLimitError ? "rate-limit" : "request-failed",
+        }];
       }
     })
   );
@@ -394,11 +394,12 @@ async function refreshBalances(version = generationId) {
 
   results.forEach(([id, result]) => balances.set(id, result));
   const failures = results.filter(([, result]) => result.status === "error").length;
+  const rateLimited = results.some(([, result]) => result.reason === "rate-limit");
   elements.balanceMessage.textContent = failures
-    ? t("partialBalanceError")
+    ? rateLimited
+      ? t("balanceRateLimited")
+      : t("partialBalanceError")
     : "";
-  elements.refresh.textContent = t("refresh");
-  elements.refresh.disabled = false;
   render();
 }
 
@@ -513,7 +514,7 @@ async function checkUpdates({ silentCurrent = false } = {}) {
   try {
     const params = new URLSearchParams(window.location.search);
     const mockVersion = window.location.hostname === "127.0.0.1" && params.get("mock-update") === "1"
-      ? "1.4.5"
+      ? "1.4.6"
       : null;
     let version = mockVersion;
     if (!version) {
@@ -563,7 +564,6 @@ function scheduleUpdateCheck() {
 }
 
 elements.more.addEventListener("click", generate);
-elements.refresh.addEventListener("click", () => refreshBalances());
 elements.copy.addEventListener("click", copyWords);
 elements.seedToggle.addEventListener("click", toggleSeed);
 elements.checkUpdate.addEventListener("click", checkUpdates);
