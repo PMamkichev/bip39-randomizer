@@ -23,11 +23,26 @@
         </div>
       </div>
       <h1 id="app-title">Клад Сатоши</h1>
-      <p id="intro" class="intro">Нажмите «Ещё», открывайте новые адреса и проверяйте их баланс. Каждый ход создаёт настоящие Bitcoin-адреса.</p>
+      <p id="intro" class="intro">Проверьте адреса и баланс — ещё один шаг к кладу Сатоши.</p>
 
-      <div class="section-heading">
-        <h2 id="words-title">12 слов BIP-39</h2>
-        <button id="copy-button" class="text-button" type="button">📋 Скопировать</button>
+      <section class="game-area" aria-label="Новый ход">
+        <button id="more-button" class="bitcoin-tap" type="button">
+          <span class="bitcoin-mark" aria-hidden="true">₿</span>
+          <span id="tap-label" class="tap-label">Новый ход</span>
+        </button>
+        <p id="total-balance-label" class="total-balance-label">Общий баланс</p>
+        <p id="total-balance" class="total-balance">Обновляем…</p>
+      </section>
+
+      <div class="section-heading seed-heading">
+        <div>
+          <h2 id="words-title">Seed-фраза</h2>
+          <p id="seed-status" class="seed-status">12 слов · скрыта</p>
+        </div>
+        <div class="seed-actions">
+          <button id="seed-toggle" class="text-button" type="button">Показать</button>
+          <button id="copy-button" class="text-button" type="button">📋 Скопировать</button>
+        </div>
       </div>
       <ol id="words" class="word-grid" aria-label="Сгенерированные слова"></ol>
 
@@ -37,11 +52,11 @@
       </div>
       <ul id="addresses" class="address-list" aria-label="Bitcoin-адреса"></ul>
 
-      <div class="actions">
+      <div class="actions single-action">
         <button id="refresh-button" class="action-button secondary" type="button">🔄 Обновить баланс</button>
-        <button id="more-button" class="action-button primary" type="button">🎲 Новый ход</button>
       </div>
       <p id="notice" class="notice">⚠️ Не используйте сгенерированные seed-фразы для хранения реальных средств. Это развлекательное приложение.</p>
+      <button id="about-button" class="about-button" type="button">ℹ️ О приложении</button>
     </section>
   </main>
 
@@ -52,6 +67,28 @@
       <h2 id="update-dialog-title">Доступна новая версия</h2>
       <p id="update-dialog-text">После перезапуска начнётся новый ход: текущие слова и адреса исчезнут. При необходимости скопируйте результат, затем закройте и откройте приложение снова.</p>
       <button id="update-dialog-close" class="action-button primary dialog-button" type="button">Понятно</button>
+    </div>
+  </dialog>
+  <dialog id="about-dialog" class="update-dialog about-dialog" aria-labelledby="about-dialog-title">
+    <div class="update-dialog-content">
+      <p id="about-dialog-eyebrow" class="dialog-eyebrow">О ПРИЛОЖЕНИИ</p>
+      <h2 id="about-dialog-title">Клад Сатоши</h2>
+      <div class="about-copy">
+        <h3 id="about-what-title">Что это</h3>
+        <p id="about-what-text">«Клад Сатоши» — развлекательный Bitcoin-квест. Каждый новый ход генерирует валидную 12-словную BIP-39 фразу и проверяет, есть ли баланс у четырёх соответствующих Bitcoin-адресов.</p>
+        <h3 id="about-privacy-title">Приватность</h3>
+        <p id="about-privacy-text">Seed-фраза, энтропия, seed и временные ключевые данные обрабатываются только на устройстве. Они не отправляются на сервер, не сохраняются в базе данных, аналитике или постоянном хранилище.</p>
+        <p id="about-session-text">При новом ходе текущий результат заменяется. После закрытия приложения он не восстанавливается. Единственная сохраняемая настройка — выбранный язык интерфейса.</p>
+        <h3 id="about-balance-title">Баланс и адреса</h3>
+        <p id="about-balance-text">Для проверки баланса приложение отправляет в Blockstream только четыре публичных Bitcoin-адреса. Seed-фраза и приватные данные наружу не передаются.</p>
+        <h3 id="about-source-title">Открытый исходный код</h3>
+        <p id="about-source-text">Исходный код приложения открыт на GitHub.</p>
+        <p id="about-warning" class="about-warning">Приложение создано для развлечения. Не используйте сгенерированные фразы для хранения реальных средств.</p>
+      </div>
+      <div class="about-actions">
+        <a id="source-link" class="source-link" href="https://github.com/PMamkichev/bip39-randomizer" target="_blank" rel="noopener noreferrer">↗ Исходный код</a>
+        <button id="about-dialog-close" class="action-button primary dialog-button" type="button">Понятно</button>
+      </div>
     </div>
   </dialog>
   <script type="module" src="js/app.js?v=1.3.0"></script>

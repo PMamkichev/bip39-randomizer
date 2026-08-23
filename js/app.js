@@ -7,6 +7,7 @@ let currentAddresses = [];
 let balances = new Map();
 let generationId = 0;
 let language = "ru";
+let seedExpanded = false;
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
 const APP_VERSION = "1.3.0";
 
@@ -14,26 +15,49 @@ const translations = {
   ru: {
     pageTitle: "Клад Сатоши",
     eyebrow: "Bitcoin-квест",
-    intro: "Нажмите «Ещё», открывайте новые адреса и проверяйте их баланс. Каждый ход создаёт настоящие Bitcoin-адреса.",
-    wordsTitle: "12 слов BIP-39",
+    intro: "Проверьте адреса и баланс — ещё один шаг к кладу Сатоши.",
+    wordsTitle: "Seed-фраза",
     wordsLabel: "Сгенерированные слова",
+    seedHidden: "12 слов · скрыта",
+    seedVisible: "12 слов · показана",
+    showSeed: "Показать",
+    hideSeed: "Скрыть",
     addressesTitle: "Bitcoin-адреса",
     addressesLabel: "Bitcoin-адреса",
     copy: "📋 Скопировать",
     checkUpdates: "↻ Проверить обновления",
     checkingUpdates: "Проверяем…",
-    currentVersion: "У вас актуальная версия.",
+    currentVersion: "Версия актуальна",
     updateCheckError: "Не удалось проверить обновления. Попробуйте ещё раз.",
     updateEyebrow: "ДОСТУПНО ОБНОВЛЕНИЕ",
     updateTitle: "Доступна новая версия",
     updateText: "После перезапуска начнётся новый ход: текущие слова и адреса исчезнут. При необходимости скопируйте результат, затем закройте и откройте приложение снова.",
     updateClose: "Понятно",
+    aboutButton: "ℹ️ О приложении",
+    aboutEyebrow: "О ПРИЛОЖЕНИИ",
+    aboutTitle: "Клад Сатоши",
+    aboutWhatTitle: "Что это",
+    aboutWhatText: "«Клад Сатоши» — развлекательный Bitcoin-квест. Каждый новый ход генерирует валидную 12-словную BIP-39 фразу и проверяет, есть ли баланс у четырёх соответствующих Bitcoin-адресов.",
+    aboutPrivacyTitle: "Приватность",
+    aboutPrivacyText: "Seed-фраза, энтропия, seed и временные ключевые данные обрабатываются только на устройстве. Они не отправляются на сервер, не сохраняются в базе данных, аналитике или постоянном хранилище.",
+    aboutSessionText: "При новом ходе текущий результат заменяется. После закрытия приложения он не восстанавливается. Единственная сохраняемая настройка — выбранный язык интерфейса.",
+    aboutBalanceTitle: "Баланс и адреса",
+    aboutBalanceText: "Для проверки баланса приложение отправляет в Blockstream только четыре публичных Bitcoin-адреса. Seed-фраза и приватные данные наружу не передаются.",
+    aboutSourceTitle: "Открытый исходный код",
+    aboutSourceText: "Исходный код приложения открыт на GitHub.",
+    aboutWarning: "Приложение создано для развлечения. Не используйте сгенерированные фразы для хранения реальных средств.",
+    aboutSourceLink: "↗ Исходный код",
+    aboutClose: "Понятно",
     copyAddress: "📋 Копировать",
     open: "Открыть",
     refresh: "🔄 Обновить баланс",
     refreshing: "Обновление…",
     more: "🎲 Новый ход",
     creating: "Создаём…",
+    newTurn: "Новый ход",
+    totalBalance: "Общий баланс",
+    totalLoading: "Обновляем…",
+    totalUnavailable: "Недоступен",
     balance: "Баланс",
     unavailable: "недоступен",
     partialBalanceError: "Не удалось обновить часть балансов. Попробуйте ещё раз.",
@@ -53,26 +77,49 @@ const translations = {
   en: {
     pageTitle: "Satoshi’s Treasure",
     eyebrow: "Bitcoin quest",
-    intro: "Press “New turn”, discover new addresses and check their balances. Each turn creates real Bitcoin addresses.",
-    wordsTitle: "12 BIP-39 words",
+    intro: "Check addresses and balances — another step toward Satoshi’s treasure.",
+    wordsTitle: "Seed phrase",
     wordsLabel: "Generated words",
+    seedHidden: "12 words · hidden",
+    seedVisible: "12 words · visible",
+    showSeed: "Show",
+    hideSeed: "Hide",
     addressesTitle: "Bitcoin addresses",
     addressesLabel: "Bitcoin addresses",
     copy: "📋 Copy",
     checkUpdates: "↻ Check for updates",
     checkingUpdates: "Checking…",
-    currentVersion: "You are using the latest version.",
+    currentVersion: "Up to date",
     updateCheckError: "Could not check for updates. Try again.",
     updateEyebrow: "UPDATE AVAILABLE",
     updateTitle: "A new version is available",
     updateText: "Restarting starts a new turn: current words and addresses will disappear. Copy the result if needed, then close and reopen the app.",
     updateClose: "Got it",
+    aboutButton: "ℹ️ About",
+    aboutEyebrow: "ABOUT THE APP",
+    aboutTitle: "Satoshi’s Treasure",
+    aboutWhatTitle: "What it is",
+    aboutWhatText: "Satoshi’s Treasure is an entertainment Bitcoin quest. Every new turn generates a valid 12-word BIP-39 phrase and checks whether any of four corresponding Bitcoin addresses has a balance.",
+    aboutPrivacyTitle: "Privacy",
+    aboutPrivacyText: "The seed phrase, entropy, seed, and temporary key data are processed only on your device. They are not sent to a server or stored in a database, analytics system, or persistent storage.",
+    aboutSessionText: "A new turn replaces the current result. It is not restored after the app is closed. The only saved setting is the selected interface language.",
+    aboutBalanceTitle: "Balances and addresses",
+    aboutBalanceText: "To check balances, the app sends only four public Bitcoin addresses to Blockstream. The seed phrase and private data are never sent outside the app.",
+    aboutSourceTitle: "Open source",
+    aboutSourceText: "The app’s source code is open on GitHub.",
+    aboutWarning: "This app is made for entertainment. Do not use generated phrases to store real funds.",
+    aboutSourceLink: "↗ Source code",
+    aboutClose: "Got it",
     copyAddress: "📋 Copy",
     open: "Open",
     refresh: "🔄 Refresh balance",
     refreshing: "Refreshing…",
     more: "🎲 New turn",
     creating: "Creating…",
+    newTurn: "New turn",
+    totalBalance: "Total balance",
+    totalLoading: "Updating…",
+    totalUnavailable: "Unavailable",
     balance: "Balance",
     unavailable: "unavailable",
     partialBalanceError: "Some balances could not be refreshed. Try again.",
@@ -93,6 +140,8 @@ const translations = {
 
 const elements = {
   words: document.querySelector("#words"),
+  seedToggle: document.querySelector("#seed-toggle"),
+  seedStatus: document.querySelector("#seed-status"),
   addresses: document.querySelector("#addresses"),
   more: document.querySelector("#more-button"),
   refresh: document.querySelector("#refresh-button"),
@@ -104,8 +153,27 @@ const elements = {
   updateDialogTitle: document.querySelector("#update-dialog-title"),
   updateDialogText: document.querySelector("#update-dialog-text"),
   updateDialogClose: document.querySelector("#update-dialog-close"),
+  aboutButton: document.querySelector("#about-button"),
+  aboutDialog: document.querySelector("#about-dialog"),
+  aboutDialogEyebrow: document.querySelector("#about-dialog-eyebrow"),
+  aboutDialogTitle: document.querySelector("#about-dialog-title"),
+  aboutWhatTitle: document.querySelector("#about-what-title"),
+  aboutWhatText: document.querySelector("#about-what-text"),
+  aboutPrivacyTitle: document.querySelector("#about-privacy-title"),
+  aboutPrivacyText: document.querySelector("#about-privacy-text"),
+  aboutSessionText: document.querySelector("#about-session-text"),
+  aboutBalanceTitle: document.querySelector("#about-balance-title"),
+  aboutBalanceText: document.querySelector("#about-balance-text"),
+  aboutSourceTitle: document.querySelector("#about-source-title"),
+  aboutSourceText: document.querySelector("#about-source-text"),
+  aboutWarning: document.querySelector("#about-warning"),
+  sourceLink: document.querySelector("#source-link"),
+  aboutDialogClose: document.querySelector("#about-dialog-close"),
   toast: document.querySelector("#toast"),
   balanceMessage: document.querySelector("#balance-message"),
+  tapLabel: document.querySelector("#tap-label"),
+  totalBalanceLabel: document.querySelector("#total-balance-label"),
+  totalBalance: document.querySelector("#total-balance"),
   eyebrow: document.querySelector("#eyebrow"),
   title: document.querySelector("#app-title"),
   intro: document.querySelector("#intro"),
@@ -117,6 +185,10 @@ const elements = {
 
 function t(key) {
   return translations[language][key];
+}
+
+function setNewTurnLabel(key) {
+  elements.tapLabel.textContent = t(key);
 }
 
 function savedLanguage() {
@@ -149,18 +221,35 @@ function applyLanguage(nextLanguage, shouldSave = false) {
   elements.addressesTitle.textContent = t("addressesTitle");
   elements.addresses.setAttribute("aria-label", t("addressesLabel"));
   elements.copy.textContent = t("copy");
+  setNewTurnLabel("newTurn");
+  elements.totalBalanceLabel.textContent = t("totalBalance");
   elements.checkUpdate.textContent = t("checkUpdates");
   elements.version.textContent = `v${APP_VERSION}`;
   elements.updateDialogEyebrow.textContent = t("updateEyebrow");
   elements.updateDialogTitle.textContent = t("updateTitle");
   elements.updateDialogText.textContent = t("updateText");
   elements.updateDialogClose.textContent = t("updateClose");
+  elements.aboutButton.textContent = t("aboutButton");
+  elements.aboutDialogEyebrow.textContent = t("aboutEyebrow");
+  elements.aboutDialogTitle.textContent = t("aboutTitle");
+  elements.aboutWhatTitle.textContent = t("aboutWhatTitle");
+  elements.aboutWhatText.textContent = t("aboutWhatText");
+  elements.aboutPrivacyTitle.textContent = t("aboutPrivacyTitle");
+  elements.aboutPrivacyText.textContent = t("aboutPrivacyText");
+  elements.aboutSessionText.textContent = t("aboutSessionText");
+  elements.aboutBalanceTitle.textContent = t("aboutBalanceTitle");
+  elements.aboutBalanceText.textContent = t("aboutBalanceText");
+  elements.aboutSourceTitle.textContent = t("aboutSourceTitle");
+  elements.aboutSourceText.textContent = t("aboutSourceText");
+  elements.aboutWarning.textContent = t("aboutWarning");
+  elements.sourceLink.textContent = t("aboutSourceLink");
+  elements.aboutDialogClose.textContent = t("aboutClose");
   elements.notice.textContent = t("notice");
   elements.languageButtons.forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.language === language));
   });
 
-  if (!elements.more.disabled) elements.more.textContent = t("more");
+  if (!elements.more.disabled) setNewTurnLabel("newTurn");
   if (!elements.refresh.disabled) elements.refresh.textContent = t("refresh");
   render();
 }
@@ -200,6 +289,21 @@ function renderWords() {
       return item;
     })
   );
+  elements.words.hidden = !seedExpanded;
+  elements.seedToggle.textContent = seedExpanded ? t("hideSeed") : t("showSeed");
+  elements.seedStatus.textContent = seedExpanded ? t("seedVisible") : t("seedHidden");
+}
+
+function renderTotalBalance() {
+  const states = currentAddresses.map(({ id }) => balances.get(id));
+  const allReady = states.length > 0 && states.every((state) => state?.status === "ready");
+  const hasError = states.some((state) => state?.status === "error");
+
+  elements.totalBalance.textContent = allReady
+    ? `${formatBtc(states.reduce((sum, state) => sum + state.satoshis, 0))} BTC`
+    : hasError
+      ? t("totalUnavailable")
+      : t("totalLoading");
 }
 
 function renderAddresses() {
@@ -226,13 +330,17 @@ function renderAddresses() {
       actions.className = "address-actions";
       copy.className = "address-button copy-address-button";
       copy.type = "button";
-      copy.textContent = t("copyAddress");
+      copy.textContent = "📋";
+      copy.setAttribute("aria-label", t("copyAddress"));
+      copy.title = t("copyAddress");
       copy.addEventListener("click", () => copyAddress(address));
       open.className = "address-button open-button";
       open.href = explorerUrl(address);
       open.target = "_blank";
       open.rel = "noopener noreferrer";
-      open.textContent = t("open");
+      open.textContent = "↗";
+      open.setAttribute("aria-label", t("open"));
+      open.title = t("open");
       actions.append(copy, open);
       card.append(name, value, balance, actions);
       return card;
@@ -243,6 +351,7 @@ function renderAddresses() {
 function render() {
   renderWords();
   renderAddresses();
+  renderTotalBalance();
 }
 
 function setButtonsDisabled(disabled) {
@@ -257,7 +366,7 @@ async function refreshBalances(version = generationId) {
   elements.refresh.textContent = t("refreshing");
   elements.refresh.disabled = true;
   currentAddresses.forEach(({ id }) => balances.set(id, { status: "loading" }));
-  renderAddresses();
+  render();
 
   const results = await Promise.all(
     currentAddresses.map(async ({ id, address }) => {
@@ -278,12 +387,12 @@ async function refreshBalances(version = generationId) {
     : "";
   elements.refresh.textContent = t("refresh");
   elements.refresh.disabled = false;
-  renderAddresses();
+  render();
 }
 
 async function generate() {
   setButtonsDisabled(true);
-  elements.more.textContent = t("creating");
+  setNewTurnLabel("creating");
   elements.balanceMessage.textContent = "";
   const version = ++generationId;
 
@@ -297,7 +406,7 @@ async function generate() {
     elements.balanceMessage.textContent = t("generationError");
   } finally {
     if (version === generationId) {
-      elements.more.textContent = t("more");
+      setNewTurnLabel("newTurn");
       setButtonsDisabled(false);
     }
   }
@@ -330,10 +439,13 @@ async function copyText(text) {
   return copied;
 }
 
-function showToast(message) {
+function showToast(message, compact = false) {
   elements.toast.textContent = message;
+  elements.toast.classList.toggle("is-compact", compact);
   elements.toast.classList.add("is-visible");
-  window.setTimeout(() => elements.toast.classList.remove("is-visible"), 1800);
+  window.setTimeout(() => {
+    elements.toast.classList.remove("is-visible", "is-compact");
+  }, 1800);
 }
 
 async function copyWords() {
@@ -354,6 +466,11 @@ async function copyAddress(address) {
   }
 
   showToast(t("addressCopied"));
+}
+
+function toggleSeed() {
+  seedExpanded = !seedExpanded;
+  renderWords();
 }
 
 function isNewerVersion(version) {
@@ -388,7 +505,7 @@ async function checkUpdates() {
     if (isNewerVersion(version)) {
       elements.updateDialog.showModal();
     } else {
-      showToast(t("currentVersion"));
+      showToast(t("currentVersion"), true);
     }
   } catch {
     showToast(t("updateCheckError"));
@@ -401,8 +518,11 @@ async function checkUpdates() {
 elements.more.addEventListener("click", generate);
 elements.refresh.addEventListener("click", () => refreshBalances());
 elements.copy.addEventListener("click", copyWords);
+elements.seedToggle.addEventListener("click", toggleSeed);
 elements.checkUpdate.addEventListener("click", checkUpdates);
 elements.updateDialogClose.addEventListener("click", () => elements.updateDialog.close());
+elements.aboutButton.addEventListener("click", () => elements.aboutDialog.showModal());
+elements.aboutDialogClose.addEventListener("click", () => elements.aboutDialog.close());
 elements.languageButtons.forEach((button) => {
   button.addEventListener("click", () => applyLanguage(button.dataset.language, true));
 });
