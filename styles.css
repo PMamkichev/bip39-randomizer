@@ -299,12 +299,20 @@ button:disabled { cursor: wait; opacity: 0.65; transform: none; }
 @media (max-width: 480px) {
   .app-shell { align-items: start; padding-inline: 10px; }
   .panel { border-radius: 20px; }
-  .panel-topline { align-items: flex-start; }
-  .panel-controls { flex-wrap: wrap; justify-content: flex-end; }
+  .panel-topline { align-items: stretch; flex-direction: column; gap: 8px; }
+  .eyebrow { margin: 0; font-size: 0.7rem; white-space: nowrap; }
+  .panel-controls { width: 100%; flex-wrap: nowrap; gap: 6px; justify-content: space-between; }
+  .reload-button { flex: 1 1 auto; min-width: 0; padding: 6px 7px; font-size: 0.68rem; white-space: nowrap; }
+  .app-version { flex: 0 0 auto; font-size: 0.66rem; white-space: nowrap; }
+  .language-switch { flex: 0 0 auto; gap: 2px; padding: 2px; }
+  .language-button { min-width: 31px; padding: 5px; }
   .actions { grid-template-columns: 1fr; }
   .bitcoin-tap { width: 156px; }
   .word-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .section-heading { align-items: flex-start; flex-direction: column; }
+  .seed-heading { align-items: center; flex-direction: row; gap: 6px; }
+  .seed-actions { flex-wrap: nowrap; gap: 5px; }
+  .seed-actions .text-button { padding: 6px 7px; border-radius: 13px; font-size: 0.78rem; white-space: nowrap; }
   .status-message { text-align: left; }
 }
 
