@@ -1,6 +1,6 @@
-import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.3.0";
-import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.3.0";
-import { generateValidMnemonic } from "./generator.js?v=1.3.0";
+import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.0";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.0";
+import { generateValidMnemonic } from "./generator.js?v=1.4.0";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -9,7 +9,7 @@ let generationId = 0;
 let language = "ru";
 let seedExpanded = false;
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.4.0";
 
 const translations = {
   ru: {
