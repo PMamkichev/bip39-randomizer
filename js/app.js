@@ -1,6 +1,6 @@
-import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js";
-import { deriveBitcoinAddresses } from "./bitcoin.js";
-import { generateValidMnemonic } from "./generator.js";
+import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.3.0";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.3.0";
+import { generateValidMnemonic } from "./generator.js?v=1.3.0";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -8,6 +8,7 @@ let balances = new Map();
 let generationId = 0;
 let language = "ru";
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
+const APP_VERSION = "1.3.0";
 
 const translations = {
   ru: {
@@ -19,6 +20,14 @@ const translations = {
     addressesTitle: "Bitcoin-адреса",
     addressesLabel: "Bitcoin-адреса",
     copy: "📋 Скопировать",
+    checkUpdates: "↻ Проверить обновления",
+    checkingUpdates: "Проверяем…",
+    currentVersion: "У вас актуальная версия.",
+    updateCheckError: "Не удалось проверить обновления. Попробуйте ещё раз.",
+    updateEyebrow: "ДОСТУПНО ОБНОВЛЕНИЕ",
+    updateTitle: "Доступна новая версия",
+    updateText: "После перезапуска начнётся новый ход: текущие слова и адреса исчезнут. При необходимости скопируйте результат, затем закройте и откройте приложение снова.",
+    updateClose: "Понятно",
     copyAddress: "📋 Копировать",
     open: "Открыть",
     refresh: "🔄 Обновить баланс",
@@ -50,6 +59,14 @@ const translations = {
     addressesTitle: "Bitcoin addresses",
     addressesLabel: "Bitcoin addresses",
     copy: "📋 Copy",
+    checkUpdates: "↻ Check for updates",
+    checkingUpdates: "Checking…",
+    currentVersion: "You are using the latest version.",
+    updateCheckError: "Could not check for updates. Try again.",
+    updateEyebrow: "UPDATE AVAILABLE",
+    updateTitle: "A new version is available",
+    updateText: "Restarting starts a new turn: current words and addresses will disappear. Copy the result if needed, then close and reopen the app.",
+    updateClose: "Got it",
     copyAddress: "📋 Copy",
     open: "Open",
     refresh: "🔄 Refresh balance",
@@ -80,6 +97,13 @@ const elements = {
   more: document.querySelector("#more-button"),
   refresh: document.querySelector("#refresh-button"),
   copy: document.querySelector("#copy-button"),
+  checkUpdate: document.querySelector("#check-update-button"),
+  version: document.querySelector("#app-version"),
+  updateDialog: document.querySelector("#update-dialog"),
+  updateDialogEyebrow: document.querySelector("#update-dialog-eyebrow"),
+  updateDialogTitle: document.querySelector("#update-dialog-title"),
+  updateDialogText: document.querySelector("#update-dialog-text"),
+  updateDialogClose: document.querySelector("#update-dialog-close"),
   toast: document.querySelector("#toast"),
   balanceMessage: document.querySelector("#balance-message"),
   eyebrow: document.querySelector("#eyebrow"),
@@ -125,6 +149,12 @@ function applyLanguage(nextLanguage, shouldSave = false) {
   elements.addressesTitle.textContent = t("addressesTitle");
   elements.addresses.setAttribute("aria-label", t("addressesLabel"));
   elements.copy.textContent = t("copy");
+  elements.checkUpdate.textContent = t("checkUpdates");
+  elements.version.textContent = `v${APP_VERSION}`;
+  elements.updateDialogEyebrow.textContent = t("updateEyebrow");
+  elements.updateDialogTitle.textContent = t("updateTitle");
+  elements.updateDialogText.textContent = t("updateText");
+  elements.updateDialogClose.textContent = t("updateClose");
   elements.notice.textContent = t("notice");
   elements.languageButtons.forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.language === language));
@@ -326,9 +356,53 @@ async function copyAddress(address) {
   showToast(t("addressCopied"));
 }
 
+function isNewerVersion(version) {
+  const latest = version.split(".").map(Number);
+  const current = APP_VERSION.split(".").map(Number);
+
+  for (let index = 0; index < latest.length; index += 1) {
+    if (latest[index] !== current[index]) return latest[index] > current[index];
+  }
+
+  return false;
+}
+
+async function checkUpdates() {
+  elements.checkUpdate.disabled = true;
+  elements.checkUpdate.textContent = t("checkingUpdates");
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const mockVersion = window.location.hostname === "127.0.0.1" && params.get("mock-update") === "1"
+      ? "1.4.0"
+      : null;
+    let version = mockVersion;
+    if (!version) {
+      const response = await fetch(`version.json?checked=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Version request failed");
+      version = (await response.json()).version;
+    }
+
+    if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error("Invalid version");
+
+    if (isNewerVersion(version)) {
+      elements.updateDialog.showModal();
+    } else {
+      showToast(t("currentVersion"));
+    }
+  } catch {
+    showToast(t("updateCheckError"));
+  } finally {
+    elements.checkUpdate.disabled = false;
+    elements.checkUpdate.textContent = t("checkUpdates");
+  }
+}
+
 elements.more.addEventListener("click", generate);
 elements.refresh.addEventListener("click", () => refreshBalances());
 elements.copy.addEventListener("click", copyWords);
+elements.checkUpdate.addEventListener("click", checkUpdates);
+elements.updateDialogClose.addEventListener("click", () => elements.updateDialog.close());
 elements.languageButtons.forEach((button) => {
   button.addEventListener("click", () => applyLanguage(button.dataset.language, true));
 });
