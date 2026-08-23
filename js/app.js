@@ -7,6 +7,7 @@ let currentAddresses = [];
 let balances = new Map();
 let generationId = 0;
 let language = "ru";
+const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
 
 const translations = {
   ru: {
@@ -94,8 +95,26 @@ function t(key) {
   return translations[language][key];
 }
 
-function applyLanguage(nextLanguage) {
+function savedLanguage() {
+  try {
+    const value = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return value === "ru" || value === "en" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLanguage() {
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch {
+    // The app still works when a WebView blocks local storage.
+  }
+}
+
+function applyLanguage(nextLanguage, shouldSave = false) {
   language = nextLanguage;
+  if (shouldSave) saveLanguage();
   document.documentElement.lang = language;
   document.title = t("pageTitle");
   elements.eyebrow.textContent = t("eyebrow");
@@ -119,7 +138,8 @@ function applyLanguage(nextLanguage) {
 function configureTelegram() {
   const webApp = window.Telegram?.WebApp;
   const browserLanguage = navigator.language?.toLowerCase();
-  language = (webApp?.initDataUnsafe?.user?.language_code ?? browserLanguage)?.startsWith("ru") ? "ru" : "en";
+  const detectedLanguage = (webApp?.initDataUnsafe?.user?.language_code ?? browserLanguage)?.startsWith("ru") ? "ru" : "en";
+  language = savedLanguage() ?? detectedLanguage;
   if (!webApp) return;
 
   webApp.ready();
@@ -310,7 +330,7 @@ elements.more.addEventListener("click", generate);
 elements.refresh.addEventListener("click", () => refreshBalances());
 elements.copy.addEventListener("click", copyWords);
 elements.languageButtons.forEach((button) => {
-  button.addEventListener("click", () => applyLanguage(button.dataset.language));
+  button.addEventListener("click", () => applyLanguage(button.dataset.language, true));
 });
 
 configureTelegram();
