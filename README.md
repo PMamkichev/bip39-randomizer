@@ -1,6 +1,6 @@
-# BIP-39 Randomizer
+# Satoshi's Treasure / Клад Сатоши
 
-A lightweight, static Telegram Mini App for entertainment. It creates a 12-word English BIP-39 mnemonic locally, derives four first-receiving Bitcoin addresses locally, then checks those public addresses with Blockstream Esplora.
+A lightweight, static Telegram Mini App and Bitcoin quest for entertainment. Each turn creates a valid 12-word English BIP-39 mnemonic locally, derives four first-receiving Bitcoin addresses locally, then checks those public addresses with Blockstream Esplora. The interface automatically follows Telegram's Russian or English language, with a manual RU/EN switch.
 
 ## Privacy and safety
 
