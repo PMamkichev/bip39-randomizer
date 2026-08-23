@@ -1,6 +1,6 @@
-import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.3";
-import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.3";
-import { generateValidMnemonic } from "./generator.js?v=1.4.3";
+import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.4";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.4";
+import { generateValidMnemonic } from "./generator.js?v=1.4.4";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -12,8 +12,8 @@ let availableUpdateVersion = null;
 let updateCheckTimer = null;
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
 const localMockBuild = window.location.hostname === "127.0.0.1"
-  && new URLSearchParams(window.location.search).get("build") === "1.4.4";
-const APP_VERSION = localMockBuild ? "1.4.4" : "1.4.3";
+  && new URLSearchParams(window.location.search).get("build") === "1.4.5";
+const APP_VERSION = localMockBuild ? "1.4.5" : "1.4.4";
 
 const translations = {
   ru: {
@@ -498,7 +498,12 @@ function isNewerVersion(version) {
 
 function showUpdateDialog(version) {
   availableUpdateVersion = version;
-  if (!elements.updateDialog.open) elements.updateDialog.showModal();
+  openDialog(elements.updateDialog, elements.updateDialogTitle);
+}
+
+function openDialog(dialog, title) {
+  if (!dialog.open) dialog.showModal();
+  title.focus({ preventScroll: true });
 }
 
 async function checkUpdates({ silentCurrent = false } = {}) {
@@ -508,7 +513,7 @@ async function checkUpdates({ silentCurrent = false } = {}) {
   try {
     const params = new URLSearchParams(window.location.search);
     const mockVersion = window.location.hostname === "127.0.0.1" && params.get("mock-update") === "1"
-      ? "1.4.4"
+      ? "1.4.5"
       : null;
     let version = mockVersion;
     if (!version) {
@@ -565,7 +570,7 @@ elements.checkUpdate.addEventListener("click", checkUpdates);
 elements.updateCopy.addEventListener("click", copyUpdateWords);
 elements.updateNow.addEventListener("click", updateNow);
 elements.updateDialogClose.addEventListener("click", () => elements.updateDialog.close());
-elements.aboutButton.addEventListener("click", () => elements.aboutDialog.showModal());
+elements.aboutButton.addEventListener("click", () => openDialog(elements.aboutDialog, elements.aboutDialogTitle));
 elements.aboutDialogClose.addEventListener("click", () => elements.aboutDialog.close());
 elements.languageButtons.forEach((button) => {
   button.addEventListener("click", () => applyLanguage(button.dataset.language, true));
