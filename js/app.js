@@ -1,6 +1,6 @@
-import { BalanceRateLimitError, fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.5";
-import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.5";
-import { generateValidMnemonic } from "./generator.js?v=1.4.5";
+import { BalanceRateLimitError, fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.5.0";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.5.0";
+import { generateValidMnemonic } from "./generator.js?v=1.5.0";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -10,10 +10,19 @@ let language = "ru";
 let seedExpanded = false;
 let availableUpdateVersion = null;
 let updateCheckTimer = null;
+let cooldownEndsAt = 0;
+let cooldownTimer = null;
+let isGenerating = false;
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
+const localCooldownSeconds = window.location.hostname === "127.0.0.1"
+  ? Number(new URLSearchParams(window.location.search).get("cooldown-seconds"))
+  : 0;
+const COOLDOWN_MS = Number.isInteger(localCooldownSeconds) && localCooldownSeconds > 0 && localCooldownSeconds <= 60
+  ? localCooldownSeconds * 1_000
+  : 60_000;
 const localMockBuild = window.location.hostname === "127.0.0.1"
-  && new URLSearchParams(window.location.search).get("build") === "1.4.6";
-const APP_VERSION = localMockBuild ? "1.4.6" : "1.4.5";
+  && new URLSearchParams(window.location.search).get("build") === "1.5.1";
+const APP_VERSION = localMockBuild ? "1.5.1" : "1.5.0";
 
 const translations = {
   ru: {
@@ -60,6 +69,7 @@ const translations = {
     more: "🎲 Новый ход",
     creating: "Создаём…",
     newTurn: "Новый ход",
+    cooldownAria: "Новый ход будет доступен через",
     totalBalance: "Общий баланс",
     totalLoading: "Обновляем…",
     totalUnavailable: "Недоступен",
@@ -125,6 +135,7 @@ const translations = {
     more: "🎲 New turn",
     creating: "Creating…",
     newTurn: "New turn",
+    cooldownAria: "New turn available in",
     totalBalance: "Total balance",
     totalLoading: "Updating…",
     totalUnavailable: "Unavailable",
@@ -202,6 +213,42 @@ function setNewTurnLabel(key) {
   elements.tapLabel.textContent = t(key);
 }
 
+function formatCooldown(remainingMs) {
+  const seconds = Math.ceil(remainingMs / 1000);
+  return `0:${String(seconds).padStart(2, "0")}`;
+}
+
+function updateCooldown() {
+  const remainingMs = Math.max(0, cooldownEndsAt - Date.now());
+  const active = remainingMs > 0;
+
+  elements.more.classList.toggle("is-cooling", active);
+  elements.more.style.setProperty("--cooldown-progress", String(active ? 1 - remainingMs / COOLDOWN_MS : 0));
+
+  if (active) {
+    const time = formatCooldown(remainingMs);
+    elements.more.disabled = true;
+    elements.more.setAttribute("aria-label", `${t("cooldownAria")} ${time}`);
+    elements.tapLabel.textContent = time;
+    window.clearTimeout(cooldownTimer);
+    cooldownTimer = window.setTimeout(updateCooldown, 100);
+    return;
+  }
+
+  window.clearTimeout(cooldownTimer);
+  cooldownTimer = null;
+  elements.more.removeAttribute("aria-label");
+  if (!isGenerating) {
+    elements.more.disabled = false;
+    setNewTurnLabel("newTurn");
+  }
+}
+
+function startCooldown() {
+  cooldownEndsAt = Date.now() + COOLDOWN_MS;
+  updateCooldown();
+}
+
 function savedLanguage() {
   try {
     const value = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -262,7 +309,8 @@ function applyLanguage(nextLanguage, shouldSave = false) {
     button.setAttribute("aria-pressed", String(button.dataset.language === language));
   });
 
-  if (!elements.more.disabled) setNewTurnLabel("newTurn");
+  if (cooldownEndsAt > Date.now()) updateCooldown();
+  else if (!elements.more.disabled) setNewTurnLabel("newTurn");
   render();
 }
 
@@ -404,6 +452,9 @@ async function refreshBalances(version = generationId) {
 }
 
 async function generate() {
+  if (isGenerating || cooldownEndsAt > Date.now()) return;
+
+  isGenerating = true;
   setButtonsDisabled(true);
   setNewTurnLabel("creating");
   elements.balanceMessage.textContent = "";
@@ -414,13 +465,14 @@ async function generate() {
     currentAddresses = await deriveBitcoinAddresses(currentWords);
     balances = new Map(currentAddresses.map(({ id }) => [id, { status: "loading" }]));
     render();
+    startCooldown();
     await refreshBalances(version);
   } catch {
     elements.balanceMessage.textContent = t("generationError");
   } finally {
     if (version === generationId) {
-      setNewTurnLabel("newTurn");
-      setButtonsDisabled(false);
+      isGenerating = false;
+      if (cooldownEndsAt <= Date.now()) updateCooldown();
     }
   }
 }
@@ -514,7 +566,7 @@ async function checkUpdates({ silentCurrent = false } = {}) {
   try {
     const params = new URLSearchParams(window.location.search);
     const mockVersion = window.location.hostname === "127.0.0.1" && params.get("mock-update") === "1"
-      ? "1.4.6"
+      ? "1.5.1"
       : null;
     let version = mockVersion;
     if (!version) {
@@ -563,7 +615,14 @@ function scheduleUpdateCheck() {
   updateCheckTimer = window.setTimeout(() => checkUpdates({ silentCurrent: true }), 350);
 }
 
-elements.more.addEventListener("click", generate);
+function triggerNewTurnHaptic() {
+  window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
+}
+
+elements.more.addEventListener("click", () => {
+  triggerNewTurnHaptic();
+  generate();
+});
 elements.copy.addEventListener("click", copyWords);
 elements.seedToggle.addEventListener("click", toggleSeed);
 elements.checkUpdate.addEventListener("click", checkUpdates);
