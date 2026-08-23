@@ -1,6 +1,6 @@
-import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.0";
-import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.0";
-import { generateValidMnemonic } from "./generator.js?v=1.4.0";
+import { fetchAddressBalance, explorerUrl, formatBtc } from "./balance.js?v=1.4.1";
+import { deriveBitcoinAddresses } from "./bitcoin.js?v=1.4.1";
+import { generateValidMnemonic } from "./generator.js?v=1.4.1";
 
 let currentWords = [];
 let currentAddresses = [];
@@ -8,8 +8,12 @@ let balances = new Map();
 let generationId = 0;
 let language = "ru";
 let seedExpanded = false;
+let availableUpdateVersion = null;
+let updateCheckTimer = null;
 const LANGUAGE_STORAGE_KEY = "satoshi-treasure-language";
-const APP_VERSION = "1.4.0";
+const localMockBuild = window.location.hostname === "127.0.0.1"
+  && new URLSearchParams(window.location.search).get("build") === "1.4.2";
+const APP_VERSION = localMockBuild ? "1.4.2" : "1.4.1";
 
 const translations = {
   ru: {
@@ -31,8 +35,10 @@ const translations = {
     updateCheckError: "Не удалось проверить обновления. Попробуйте ещё раз.",
     updateEyebrow: "ДОСТУПНО ОБНОВЛЕНИЕ",
     updateTitle: "Доступна новая версия",
-    updateText: "После перезапуска начнётся новый ход: текущие слова и адреса исчезнут. При необходимости скопируйте результат, затем закройте и откройте приложение снова.",
-    updateClose: "Понятно",
+    updateText: "После обновления начнётся новый ход: текущие слова и адреса исчезнут. При необходимости сначала скопируйте seed-фразу.",
+    updateCopy: "📋 Скопировать seed-фразу",
+    updateNow: "Обновить сейчас",
+    updateClose: "Позже",
     aboutButton: "ℹ️ О приложении",
     aboutEyebrow: "О ПРИЛОЖЕНИИ",
     aboutTitle: "Клад Сатоши",
@@ -93,8 +99,10 @@ const translations = {
     updateCheckError: "Could not check for updates. Try again.",
     updateEyebrow: "UPDATE AVAILABLE",
     updateTitle: "A new version is available",
-    updateText: "Restarting starts a new turn: current words and addresses will disappear. Copy the result if needed, then close and reopen the app.",
-    updateClose: "Got it",
+    updateText: "Updating starts a new turn: current words and addresses will disappear. Copy the seed phrase first if needed.",
+    updateCopy: "📋 Copy seed phrase",
+    updateNow: "Update now",
+    updateClose: "Later",
     aboutButton: "ℹ️ About",
     aboutEyebrow: "ABOUT THE APP",
     aboutTitle: "Satoshi’s Treasure",
@@ -152,6 +160,8 @@ const elements = {
   updateDialogEyebrow: document.querySelector("#update-dialog-eyebrow"),
   updateDialogTitle: document.querySelector("#update-dialog-title"),
   updateDialogText: document.querySelector("#update-dialog-text"),
+  updateCopy: document.querySelector("#update-copy-button"),
+  updateNow: document.querySelector("#update-now-button"),
   updateDialogClose: document.querySelector("#update-dialog-close"),
   aboutButton: document.querySelector("#about-button"),
   aboutDialog: document.querySelector("#about-dialog"),
@@ -228,6 +238,8 @@ function applyLanguage(nextLanguage, shouldSave = false) {
   elements.updateDialogEyebrow.textContent = t("updateEyebrow");
   elements.updateDialogTitle.textContent = t("updateTitle");
   elements.updateDialogText.textContent = t("updateText");
+  elements.updateCopy.textContent = t("updateCopy");
+  elements.updateNow.textContent = t("updateNow");
   elements.updateDialogClose.textContent = t("updateClose");
   elements.aboutButton.textContent = t("aboutButton");
   elements.aboutDialogEyebrow.textContent = t("aboutEyebrow");
@@ -484,14 +496,19 @@ function isNewerVersion(version) {
   return false;
 }
 
-async function checkUpdates() {
+function showUpdateDialog(version) {
+  availableUpdateVersion = version;
+  if (!elements.updateDialog.open) elements.updateDialog.showModal();
+}
+
+async function checkUpdates({ silentCurrent = false } = {}) {
   elements.checkUpdate.disabled = true;
   elements.checkUpdate.textContent = t("checkingUpdates");
 
   try {
     const params = new URLSearchParams(window.location.search);
     const mockVersion = window.location.hostname === "127.0.0.1" && params.get("mock-update") === "1"
-      ? "1.4.0"
+      ? "1.4.2"
       : null;
     let version = mockVersion;
     if (!version) {
@@ -503,8 +520,8 @@ async function checkUpdates() {
     if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error("Invalid version");
 
     if (isNewerVersion(version)) {
-      elements.updateDialog.showModal();
-    } else {
+      showUpdateDialog(version);
+    } else if (!silentCurrent) {
       showToast(t("currentVersion"), true);
     }
   } catch {
@@ -515,11 +532,38 @@ async function checkUpdates() {
   }
 }
 
+async function copyUpdateWords() {
+  if (!currentWords.length) return;
+
+  if (!(await copyText(currentWords.join(" ")))) {
+    elements.balanceMessage.textContent = t("copyWordsError");
+    return;
+  }
+
+  showToast(t("wordsCopied"));
+}
+
+function updateNow() {
+  if (!availableUpdateVersion) return;
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("build", availableUpdateVersion);
+  url.searchParams.set("reload", String(Date.now()));
+  window.location.replace(url.toString());
+}
+
+function scheduleUpdateCheck() {
+  window.clearTimeout(updateCheckTimer);
+  updateCheckTimer = window.setTimeout(() => checkUpdates({ silentCurrent: true }), 350);
+}
+
 elements.more.addEventListener("click", generate);
 elements.refresh.addEventListener("click", () => refreshBalances());
 elements.copy.addEventListener("click", copyWords);
 elements.seedToggle.addEventListener("click", toggleSeed);
 elements.checkUpdate.addEventListener("click", checkUpdates);
+elements.updateCopy.addEventListener("click", copyUpdateWords);
+elements.updateNow.addEventListener("click", updateNow);
 elements.updateDialogClose.addEventListener("click", () => elements.updateDialog.close());
 elements.aboutButton.addEventListener("click", () => elements.aboutDialog.showModal());
 elements.aboutDialogClose.addEventListener("click", () => elements.aboutDialog.close());
@@ -530,3 +574,8 @@ elements.languageButtons.forEach((button) => {
 configureTelegram();
 applyLanguage(language);
 generate();
+scheduleUpdateCheck();
+window.addEventListener("pageshow", scheduleUpdateCheck);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") scheduleUpdateCheck();
+});

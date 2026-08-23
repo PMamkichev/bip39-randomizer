@@ -15,7 +15,7 @@
         <p id="eyebrow" class="eyebrow">Bitcoin-квест</p>
         <div class="panel-controls">
           <button id="check-update-button" class="reload-button" type="button">↻ Проверить обновления</button>
-          <span id="app-version" class="app-version">v1.4.0</span>
+          <span id="app-version" class="app-version">v1.4.1</span>
           <div class="language-switch" aria-label="Language">
             <button class="language-button" type="button" data-language="ru" aria-pressed="true">RU</button>
             <button class="language-button" type="button" data-language="en" aria-pressed="false">EN</button>
@@ -65,8 +65,12 @@
     <div class="update-dialog-content">
       <p id="update-dialog-eyebrow" class="dialog-eyebrow">ДОСТУПНО ОБНОВЛЕНИЕ</p>
       <h2 id="update-dialog-title">Доступна новая версия</h2>
-      <p id="update-dialog-text">После перезапуска начнётся новый ход: текущие слова и адреса исчезнут. При необходимости скопируйте результат, затем закройте и откройте приложение снова.</p>
-      <button id="update-dialog-close" class="action-button primary dialog-button" type="button">Понятно</button>
+      <p id="update-dialog-text">После обновления начнётся новый ход: текущие слова и адреса исчезнут. При необходимости сначала скопируйте seed-фразу.</p>
+      <div class="update-actions">
+        <button id="update-copy-button" class="action-button secondary dialog-button" type="button">📋 Скопировать seed-фразу</button>
+        <button id="update-now-button" class="action-button primary dialog-button" type="button">Обновить сейчас</button>
+        <button id="update-dialog-close" class="dialog-later-button" type="button">Позже</button>
+      </div>
     </div>
   </dialog>
   <dialog id="about-dialog" class="update-dialog about-dialog" aria-labelledby="about-dialog-title">
@@ -91,6 +95,6 @@
       </div>
     </div>
   </dialog>
-  <script type="module" src="js/app.js?v=1.4.0"></script>
+  <script type="module" src="js/app.js?v=1.4.1"></script>
 </body>
 </html>
